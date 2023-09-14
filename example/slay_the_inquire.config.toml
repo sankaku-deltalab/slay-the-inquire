@@ -1,0 +1,13 @@
+[[tooltips]]
+keyword = "Poisoned"
+description = """
+Enemy is `Poisoned` if it has `Poison` token.  
+Poisoned enemy take damage when end of turn.  
+Damage equals `Poison` token count.
+"""
+
+[[tooltips]]
+keyword = "CanDie"
+description = """
+Enemy is `CanDie` if it has non-positive health.
+"""
