@@ -1,25 +1,89 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
+import { Search } from "./search";
+
+const KEYWORDS_FOR_SAMPLE: Record<string, string> = {
+  hello: "Text for sample",
+  disposable: "Subscribable items?",
+};
+
+type State = {
+  activeEditor: vscode.TextEditor | undefined;
+  timeout: NodeJS.Timeout | undefined;
+};
+
+const STATE: State = {
+  activeEditor: undefined,
+  timeout: undefined,
+};
+
+// this work as key of decorations
+const DECORATION_TYPE = vscode.window.createTextEditorDecorationType({
+  textDecoration: "underline",
+});
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  vscode.window.onDidChangeActiveTextEditor(
+    (editor) => {
+      STATE.activeEditor = editor;
+      triggerUpdateDecoration();
+    },
+    null,
+    context.subscriptions
+  );
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "slay-the-inquire" is now active!');
+  vscode.workspace.onDidOpenTextDocument(
+    (e) => {
+      triggerUpdateDecoration();
+    },
+    null,
+    context.subscriptions
+  );
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('slay-the-inquire.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from Slay the Inquire!');
-	});
+  vscode.workspace.onDidChangeTextDocument(
+    (e) => {
+      triggerUpdateDecoration();
+    },
+    null,
+    context.subscriptions
+  );
 
-	context.subscriptions.push(disposable);
+  STATE.activeEditor = vscode.window.activeTextEditor;
+  triggerUpdateDecoration();
+}
+
+function updateDecoration(): void {
+  const editor = STATE.activeEditor;
+  const keywords = KEYWORDS_FOR_SAMPLE;
+  if (editor === undefined) {
+    return;
+  }
+  const document = editor.document;
+  const uri = document.uri;
+  const targets = Search.searchTargets(uri, document, Object.keys(keywords));
+
+  const ranges = targets.map((t) => {
+    const startPos = document.positionAt(t.start);
+    const endPos = document.positionAt(t.end);
+    return {
+      range: new vscode.Range(startPos, endPos),
+      hoverMessage: new vscode.MarkdownString(
+        `*${t.text}*\n\n${keywords[t.text]}`
+      ),
+    };
+  });
+  editor.setDecorations(DECORATION_TYPE, ranges);
+}
+
+function triggerUpdateDecoration() {
+  if (STATE.timeout) {
+    clearTimeout(STATE.timeout);
+  }
+
+  STATE.timeout = setTimeout(updateDecoration, 200);
 }
 
 // This method is called when your extension is deactivated
