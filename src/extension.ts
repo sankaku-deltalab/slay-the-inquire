@@ -8,19 +8,56 @@ const KEYWORDS_FOR_SAMPLE: Record<string, string> = {
   disposable: "Subscribable items?",
 };
 
+type State = {
+  activeEditor: vscode.TextEditor | undefined;
+  timeout: NodeJS.Timeout | undefined;
+};
+
+const STATE: State = {
+  activeEditor: undefined,
+  timeout: undefined,
+};
+
+// this work as key of decorations
+const DECORATION_TYPE = vscode.window.createTextEditorDecorationType({
+  textDecoration: "underline",
+});
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  let disposable = vscode.commands.registerCommand(
-    "slay-the-inquire.helloWorld",
-    helloWorld
+  vscode.window.onDidChangeActiveTextEditor(
+    (editor) => {
+      STATE.activeEditor = editor;
+      triggerUpdateDecoration();
+    },
+    null,
+    context.subscriptions
   );
-  context.subscriptions.push(disposable);
+
+  vscode.workspace.onDidOpenTextDocument(
+    (e) => {
+      triggerUpdateDecoration();
+    },
+    null,
+    context.subscriptions
+  );
+
+  vscode.workspace.onDidChangeTextDocument(
+    (e) => {
+      triggerUpdateDecoration();
+    },
+    null,
+    context.subscriptions
+  );
+
+  STATE.activeEditor = vscode.window.activeTextEditor;
+  triggerUpdateDecoration();
 }
 
-function helloWorld(context: vscode.ExtensionContext): void {
+function updateDecoration(): void {
+  const editor = STATE.activeEditor;
   const keywords = KEYWORDS_FOR_SAMPLE;
-  const editor = vscode.window.activeTextEditor;
   if (editor === undefined) {
     return;
   }
@@ -28,21 +65,25 @@ function helloWorld(context: vscode.ExtensionContext): void {
   const uri = document.uri;
   const targets = Search.searchTargets(uri, document, Object.keys(keywords));
 
-  for (const t of targets) {
-    const startPos = editor.document.positionAt(t.start);
-    const endPos = editor.document.positionAt(t.end);
-    const range: vscode.DecorationOptions = {
+  const ranges = targets.map((t) => {
+    const startPos = document.positionAt(t.start);
+    const endPos = document.positionAt(t.end);
+    return {
       range: new vscode.Range(startPos, endPos),
       hoverMessage: new vscode.MarkdownString(
         `*${t.text}*\n\n${keywords[t.text]}`
       ),
     };
-    const deco = vscode.window.createTextEditorDecorationType({
-      textDecoration: "underline",
-    });
-    editor.setDecorations(deco, [range]);
+  });
+  editor.setDecorations(DECORATION_TYPE, ranges);
+}
+
+function triggerUpdateDecoration() {
+  if (STATE.timeout) {
+    clearTimeout(STATE.timeout);
   }
-  vscode.window.showInformationMessage("decorated");
+
+  STATE.timeout = setTimeout(updateDecoration, 200);
 }
 
 // This method is called when your extension is deactivated
