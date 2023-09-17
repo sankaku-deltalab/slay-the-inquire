@@ -1,12 +1,4 @@
-import { window, TextDocument, Uri } from "vscode";
-import {
-  createSourceFile,
-  ScriptTarget,
-  forEachChild,
-  Node,
-  isFunctionDeclaration,
-  isMethodDeclaration,
-} from "typescript";
+import { TextDocument, Uri } from "vscode";
 
 export type TextRange = {
   uri: Uri;
@@ -22,8 +14,6 @@ export namespace Search {
     keywords: string[]
   ): TextRange[] {
     return searchKeywords(uri, workspaceState.getText(), keywords);
-    return searchFunctionNameRanges(uri, workspaceState.getText());
-    // TODO: get tooltip text
   }
 
   function searchKeywords(
@@ -48,42 +38,4 @@ export namespace Search {
     });
     return rangesMut;
   }
-
-  function searchFunctionNameRanges(uri: Uri, text: string): TextRange[] {
-    const sourceFile = createSourceFile(
-      uri.path,
-      text,
-      ScriptTarget.Latest,
-      true
-    );
-
-    const functionTargetsMut: TextRange[] = [];
-    const traverse = (node: Node): void => {
-      if (isFunctionDeclaration(node) || isMethodDeclaration(node)) {
-        if (node.name !== undefined) {
-          const functionName = node.name.getText();
-          const startPosition = node.name.pos + 1;
-          const endPosition = node.name.end;
-
-          functionTargetsMut.push({
-            uri,
-            text: functionName,
-            start: startPosition,
-            end: endPosition,
-          });
-        }
-      }
-
-      forEachChild(node, traverse);
-    };
-
-    traverse(sourceFile);
-
-    return functionTargetsMut;
-  }
-
-  // function searchKeywordRanges(
-  //   original: TextRange,
-  //   keyword: string
-  // ): TextRange[] {}
 }
