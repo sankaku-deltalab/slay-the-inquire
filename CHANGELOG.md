@@ -6,6 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.2]
+
+- Add publisher to `package.json`
+
 ## [0.1.0-alpha.1]
 
 - Fix package setting
