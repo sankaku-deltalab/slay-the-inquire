@@ -15,7 +15,6 @@ export type Config = {
 
 export namespace Config {
   export function parse(text: string): Config {
-    console.error(text);
     const raw = TOML.parse(text) as ConfigRaw; // TODO: validate
     return {
       tooltips: Object.fromEntries(
