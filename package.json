@@ -2,7 +2,7 @@
   "name": "slay-the-inquire",
   "displayName": "Slay the Inquire",
   "description": "Tooltip like \"Slay the Spire\"",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "publisher": "Deltalab",
   "engines": {
     "vscode": "^1.82.0"
